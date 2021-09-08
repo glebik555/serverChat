@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strings"
-
 )
 
 const (
@@ -19,10 +21,22 @@ const (
 var name = flag.String("name", "", "Advertised name of client")
 
 func main() {
+	certFile := flag.String("certfile", "cert.pem", "trusted CA certificate")
 	flag.Parse()
 
+	cert, err := os.ReadFile(*certFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	certPool := x509.NewCertPool()
+	if ok := certPool.AppendCertsFromPEM(cert); !ok {
+		log.Fatalf("unable to parse cert from %s", *certFile)
+	}
+	config := &tls.Config{RootCAs: certPool}
+
 	fmt.Println("Connecting to " + connType_ + " server " + connHost_ + ":" + connPort_)
-	conn, err := net.Dial(connType_, connHost_+":"+connPort_)
+	conn, err := tls.Dial(connType_, connHost_+":"+connPort_, config)
 	if err != nil {
 		fmt.Println("Error connecting:", err.Error())
 		os.Exit(1)
@@ -35,9 +49,10 @@ func main() {
 	go serverIncoming(conn)
 
 	for {
-		fmt.Print("Enter text: ")  // to0 (glebasta)1 sasha2 privet3 ... Сообщение серверу
+		fmt.Print("Enter text: ") // to0 (glebasta)1 sasha2 privet3 ... Сообщение серверу
 		var sb strings.Builder
 		sb.WriteString("to " + "(" + *name + ") ")
+
 		text, _ := reader.ReadString('\n')
 		sb.WriteString(text)
 		fmt.Println("b: " + sb.String())
@@ -56,7 +71,7 @@ func serverIncoming(conn net.Conn) { // Сообщение от сервера
 			break
 		}
 		var sb strings.Builder
-		for  i:=3; i < len(splitted);i++{
+		for i := 3; i < len(splitted); i++ {
 			sb.WriteString(splitted[i] + " ")
 		}
 

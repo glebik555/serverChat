@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
+	"flag"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -19,8 +22,16 @@ func main() {
 	messages := make(map[string]chan string)
 
 	fmt.Println("Starting " + connType + " server on " + connHost + ":" + connPort)
+	certFile := flag.String("cert", "cert.pem", "certificate PEM file")
+	keyFile := flag.String("key", "key.pem", "key PEM file")
+	flag.Parse()
+	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
 
-	l, err := net.Listen(connType, connHost+":"+connPort)
+	l, err := tls.Listen(connType, ":"+connPort, config)
 	if err != nil {
 		fmt.Println("Error listening:", err.Error())
 		os.Exit(1)
