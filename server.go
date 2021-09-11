@@ -48,7 +48,6 @@ func main() {
 		}
 		fmt.Println("Client connected")
 		fmt.Println("Client " + c.RemoteAddr().String() + " connected")
-		fmt.Println(c.RemoteAddr().String() + " -#1 ")
 		go handleConnection(c, c.RemoteAddr().String(), &messages)
 	}
 }
@@ -66,7 +65,6 @@ func handleConnection(conn net.Conn, id string, messages *map[string]chan string
 	fmt.Println("With name " + name)
 
 	(*messages)[name] = make(chan string, 1)
-	fmt.Println(conn.RemoteAddr().String() + " -#2 " + name)
 	go serveOutcoming(name, conn, messages)
 	for {
 		buffer, err := bufio.NewReader(conn).ReadBytes('\n')
@@ -82,11 +80,13 @@ func handleConnection(conn net.Conn, id string, messages *map[string]chan string
 			splitted := strings.Split(message, " ")
 			if splitted[2] == "all" {
 				for k, _ := range *messages {
-					(*messages)[k] <- message
+					if !strings.Contains(splitted[1], k) {
+						(*messages)[k] <- message
+					}
 				}
 			} else {
 				(*messages)[splitted[2]] <- message
-				fmt.Println("Wrote message to " + splitted[2] + " " + message)
+				fmt.Println("Wrote message to " + splitted[2] + "from " + splitted[1])
 			}
 		}
 
@@ -110,7 +110,6 @@ func serveOutcoming(name string, conn net.Conn, messages *map[string]chan string
 				ourChan = (*messages)[key]
 				select {
 				case message := <-ourChan:
-					fmt.Println("Read message to " + name + " " + message)
 					_, err := conn.Write([]byte(message + "\n"))
 					if err != nil {
 						panic(err)
@@ -121,8 +120,6 @@ func serveOutcoming(name string, conn net.Conn, messages *map[string]chan string
 		} else {
 			select {
 			case message := <-ourChan:
-				fmt.Println("Read message to " + name + " " + message)
-				fmt.Println(conn.RemoteAddr().String() + " - #3 " + name)
 				_, err := conn.Write([]byte(message + "\n"))
 				if err != nil {
 					panic(err)

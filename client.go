@@ -49,13 +49,12 @@ func main() {
 	go serverIncoming(conn)
 
 	for {
-		fmt.Print("Enter text: ") // to0 (glebasta)1 sasha2 privet3 ... Сообщение серверу
+		fmt.Print("Enter text: ")
 		var sb strings.Builder
 		sb.WriteString("to " + "(" + *name + ") ")
 
 		text, _ := reader.ReadString('\n')
 		sb.WriteString(text)
-		fmt.Println("b: " + sb.String())
 		conn.Write([]byte(sb.String() + "\n"))
 		if strings.Contains(text, "/exit") {
 			break
@@ -63,7 +62,7 @@ func main() {
 	}
 }
 
-func serverIncoming(conn net.Conn) { // Сообщение от сервера
+func serverIncoming(conn net.Conn) {
 	for {
 		buffer, err := bufio.NewReader(conn).ReadBytes('\n')
 		splitted := strings.Split(string(buffer), " ")
