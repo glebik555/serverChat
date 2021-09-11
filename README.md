@@ -16,7 +16,7 @@ go run .\client.go --name=sasha
 
 ## Using chat
 
-**To send a message to a client, you need to know his name. Sending a message to Sasha**    
+**To send a message to a client, you need to know his name. Sending a message to Sasha:**    
 
 **pasha**: ___sasha hello___
 
